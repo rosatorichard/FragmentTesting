@@ -14,6 +14,7 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.pdf.PdfDocument;
 import android.graphics.pdf.PdfRenderer;
+import android.net.Uri;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.support.annotation.RequiresApi;
@@ -28,6 +29,9 @@ import android.widget.ImageView;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -64,52 +68,92 @@ public class MainActivity extends AppCompatActivity {
 
 //    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void Render(){
+        Intent intent = new Intent();
+        intent.setClassName("com.adobe.reader", "com.adobe.reader.AdobeReader");
+        intent.setAction(android.content.Intent.ACTION_VIEW);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
-        try{
-            pdfView=(ImageView)findViewById(R.id.pdfViewer);
-        hight=pdfView.getHeight()/2;
-        width=pdfView.getWidth()/2;
+//        File file=new File("/sdcard/Download/pdf-sample.pdf");
+        File file=new File(getFilesDir()+"pdf.pdf");
 
-//        width=1449;
-//        hight=2192;
-        Log.d("Width_Hight", "Render: "+width+ " "+hight);
-        Bitmap bitmap=Bitmap.createBitmap(width,hight,Bitmap.Config.ARGB_4444);
-
-        File file=new File("/sdcard/Download/pdf-sample.pdf");
-            //Log.d("Isempty", "Render: "+file);
-        PdfRenderer renderer= null;
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                renderer = new PdfRenderer(ParcelFileDescriptor.open(file,ParcelFileDescriptor.MODE_READ_ONLY));
-            }
+            InputStream in=getAssets().open("pdf.pdf");
+            OutputStream out=openFileOutput(file.getName(),Context.MODE_WORLD_READABLE);
+            copyFile(in, out);
+            in.close();
+            in = null;
+            out.flush();
+            out.close();
+            out = null;
+//            startActivity(intent);
         } catch (IOException e) {
             e.printStackTrace();
-
         }
 
-        if(currentPage<0)
-            {
-                currentPage=0;
-            }else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if(currentPage>renderer.getPageCount())
-            {
-                currentPage=renderer.getPageCount()-1;
-            }
-        }
 
-            Matrix matrix=pdfView.getImageMatrix();
+        Log.d("HERP", "Render: "+getFilesDir());
+//        Uri uri= Uri.fromFile(file);
+//        intent.setDataAndType(uri, "application/pdf");
+        intent.setDataAndType(
+                Uri.parse("file://" + getFilesDir() + "/pdf.pdf"),
+                "application/pdf");
 
-            Rect rect=new Rect(0,0,width,hight);
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                renderer.openPage(currentPage).render(bitmap,rect,matrix,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-            }
-            pdfView.setImageMatrix(matrix);
-            pdfView.setImageBitmap(bitmap);
-            pdfView.invalidate();
-        }catch (Exception e){}
+        startActivity(intent);
+//
+//        try{
+//            pdfView=(ImageView)findViewById(R.id.pdfViewer);
+//        hight=pdfView.getHeight()/2;
+//        width=pdfView.getWidth()/2;
+//
+////        width=1449;
+////        hight=2192;
+//        Log.d("Width_Hight", "Render: "+width+ " "+hight);
+//        Bitmap bitmap=Bitmap.createBitmap(width,hight,Bitmap.Config.ARGB_4444);
+//
+//        File file=new File("/sdcard/Download/pdf-sample.pdf");
+//            //Log.d("Isempty", "Render: "+file);
+//        PdfRenderer renderer= null;
+//        try {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//                renderer = new PdfRenderer(ParcelFileDescriptor.open(file,ParcelFileDescriptor.MODE_READ_ONLY));
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//
+//        }
+//
+//        if(currentPage<0)
+//            {
+//                currentPage=0;
+//            }else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//            if(currentPage>renderer.getPageCount())
+//            {
+//                currentPage=renderer.getPageCount()-1;
+//            }
+//        }
+//
+//            Matrix matrix=pdfView.getImageMatrix();
+//
+//            Rect rect=new Rect(0,0,width,hight);
+//
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//                renderer.openPage(currentPage).render(bitmap,rect,matrix,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+//            }
+//            pdfView.setImageMatrix(matrix);
+//            pdfView.setImageBitmap(bitmap);
+//            pdfView.invalidate();
+//        }catch (Exception e){}
     }
 
+    private void copyFile(InputStream in, OutputStream out) throws IOException
+    {
+        byte[] buffer = new byte[1024];
+        int read;
+        while ((read = in.read(buffer)) != -1)
+        {
+            out.write(buffer, 0, read);
+        }
+    }
     public void boom(View view) {
 
         dia  =new Dialog(this);
